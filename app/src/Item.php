@@ -1,8 +1,9 @@
 <?php
+declare(strict_types=1);
 
-namespace Azonmedia\Catalog;
+namespace GuzabaPlatform\Catalog;
 
-use Azonmedia\Tags\Base\Interfaces\TagInterface;
+use GuzabaPlatform\Tags\Base\Interfaces\TagInterface;
 
 class Item implements Base\Interfaces\Item
 {

@@ -1,10 +1,9 @@
 <?php
+declare(strict_types=1);
 
+namespace GuzabaPlatform\Catalog;
 
-namespace Azonmedia\Catalog;
-
-
-use Azonmedia\Tags\Base\Interfaces\TagInterface;
+use GuzabaPlatform\Tags\Base\Interfaces\TagInterface;
 
 class Category implements Base\Interfaces\Category
 {
