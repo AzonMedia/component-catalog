@@ -6,6 +6,8 @@ namespace GuzabaPlatform\Catalog;
 use Guzaba2\Orm\Exceptions\RecordNotFoundException;
 use Guzaba2\Orm\Exceptions\ValidationFailedException;
 use Guzaba2\Orm\Interfaces\ValidationFailedExceptionInterface;
+use Guzaba2\Orm\Transaction;
+use Guzaba2\Transaction\Interfaces\TransactionManagerInterface;
 use Guzaba2\Translator\Translator as t;
 use GuzabaPlatform\Assets\Models\File;
 use GuzabaPlatform\Images\Image;
@@ -30,8 +32,7 @@ class Item extends BaseActiveRecord implements Base\Interfaces\Item
 
         'object_name_property'  => 'catalog_item_name',//required by BaseActiveRecord::get_object_name_property()
 
-        'store_relative_base'       => '/public/images/products',// this is relative to the application diretory -> ./app/public/assets
-        'document_root_assets_dir'  => '/images/products',
+        'images_dir'            => 'products',
     ];
 
     protected const CONFIG_RUNTIME = [];
@@ -49,8 +50,40 @@ class Item extends BaseActiveRecord implements Base\Interfaces\Item
 
     public function add_image(string $image_url): void
     {
-        $File = File::download_file(self::CONFIG_RUNTIME['store_relative_base'], $image_url);
-        $Image = Image::create($this, $File->get_absolute_path());
+        $relative_path = self::CONFIG_RUNTIME['images_dir'].'/'.$this->get_uuid();//lets put the product images in individual subfolder (in case of image name collisions)
+        $File = File::download_file($relative_path, $image_url);
+        $this->add_image_from_file($File);
+    }
+
+    public function add_image_from_file(File $File): void
+    {
+        Image::create($this, $File->get_absolute_path());
+    }
+    
+    public function get_images(): array
+    {
+        return Image::get_by( ['image_class_id' => self::get_class_id(), 'image_object_id' => $this->get_id() ] );
+    }
+
+    public function delete_images(): void
+    {
+        foreach ($this->get_images() as $Image) {
+            $Image->delete();
+        }
+    }
+
+    protected function _before_delete(): void
+    {
+        //if there delete transaction is successful delete the images
+        //object the transaction and add a on commit event
+        //it is better to do it this way insted of deleting the images in _after_delete but without taking into account the transaction.
+        /** @var TransactionManagerInterface $TransactionManager */
+        $TransactionManager = self::get_service('TransactionManager');
+        $Transaction = $TransactionManager->get_current_transaction(Transaction::class);//there should always be a current transaction in _before_delete()
+        $Transaction->add_callback('_after_commit', function(): void
+        {
+            $this->delete_images();
+        });
     }
 
     protected function _validate_catalog_category_id(): ?ValidationFailedExceptionInterface
@@ -64,6 +97,13 @@ class Item extends BaseActiveRecord implements Base\Interfaces\Item
             $message = sprintf(t::_('There is no %1$s with catalog_category_id %2$s does not exist.'), Category::class, $this->catalog_category_id );
             return new ValidationFailedException($this, 'catalog_category_id', $message);
         }
+        return null;
+    }
+
+    protected function _validate_catalog_item_name(): ?ValidationFailedExceptionInterface
+    {
+        //TODO - the product name must be unique withing the category
+        return null;
     }
 
     /**
