@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace GuzabaPlatform\Catalog;
+namespace GuzabaPlatform\Catalog\Models;
 
 use GuzabaPlatform\Platform\Application\BaseActiveRecord;
 use GuzabaPlatform\Tags\Base\Interfaces\TagInterface;
@@ -14,7 +14,7 @@ use GuzabaPlatform\Tags\Base\Interfaces\TagInterface;
  * @property int|null   parent_catalog_category_id
  * @property string     catalog_category_name
  */
-class Category extends BaseActiveRecord implements Base\Interfaces\Category
+class Category extends BaseActiveRecord implements \GuzabaPlatform\Catalog\Base\Interfaces\Category
 {
 
     protected const CONFIG_DEFAULTS = [
