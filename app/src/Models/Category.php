@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace GuzabaPlatform\Catalog\Models;
 
+use Guzaba2\Orm\Interfaces\ValidationFailedExceptionInterface;
 use GuzabaPlatform\Platform\Application\BaseActiveRecord;
 use GuzabaPlatform\Tags\Base\Interfaces\TagInterface;
 
@@ -35,14 +36,40 @@ class Category extends BaseActiveRecord implements \GuzabaPlatform\Catalog\Base\
         return $Category;
     }
 
-    protected function _before_write(): void
+    protected function _validate_parent_catalog_category_id(): ?ValidationFailedExceptionInterface
     {
         //check the parent category exists
+
+        return null;
     }
 
+    protected function _before_delete(): void
+    {
+        //delete all items in this category
+        foreach ($this->get_items() as $Item) {
+            $Item->delete();
+        }
+        //delete all sub-categories
+        foreach ($this->get_categories() as $Category) {
+            $Category->delete();
+        }
+    }
+
+    /**
+     * @return iterable
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \ReflectionException
+     */
     public function get_items(): iterable
     {
-        // TODO: Implement get_items() method.
+        return Item::get_by( ['catalog_category_id' => $this->get_id() ] );
+    }
+
+    public function get_categories(): iterable
+    {
+        return Category::get_by( ['parent_catalog_category_id' => $this->get_id() ] );
     }
 
     /**

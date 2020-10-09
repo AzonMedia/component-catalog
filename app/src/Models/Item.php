@@ -88,7 +88,7 @@ class Item extends BaseActiveRecord implements \GuzabaPlatform\Catalog\Base\Inte
         //it is better to do it this way insted of deleting the images in _after_delete but without taking into account the transaction.
         //there is no way to obtain the current transaction (this is intentional)
         //instead a nested one is started
-        $Transaction = ActiveRecord::new_transaction($TR);
+        $Transaction = self::new_transaction($TR);
         $Transaction->begin();
         $Transaction->add_callback('_after_commit', function(): void
         {
@@ -105,7 +105,7 @@ class Item extends BaseActiveRecord implements \GuzabaPlatform\Catalog\Base\Inte
         try {
             $Category = new Category($this->catalog_category_id);
         } catch (RecordNotFoundException $Exception) {
-            $message = sprintf(t::_('There is no %1$s with catalog_category_id %2$s does not exist.'), Category::class, $this->catalog_category_id );
+            $message = sprintf(t::_('There is no %1$s with catalog_category_id %2$s.'), Category::class, $this->catalog_category_id );
             return new ValidationFailedException($this, 'catalog_category_id', $message);
         }
         return null;
