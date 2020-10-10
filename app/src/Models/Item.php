@@ -56,7 +56,7 @@ class Item extends BaseActiveRecord implements ItemInterface
      * Loaded with get_images() from _after_read()
      * @var array
      */
-    protected array $images = [];
+    public array $images = [];
 
     /**
      * Contains the primary object alias. A page (and any other object) may have more than one alias.
@@ -73,10 +73,10 @@ class Item extends BaseActiveRecord implements ItemInterface
 
     protected function _after_read(): void
     {
-
-        if ($this->page_group_id && !$this->is_property_modified('page_group_uuid') ) {
-            $PageGroup = new PageGroup($this->page_group_id);
-            $this->page_group_uuid = $PageGroup->get_uuid();
+        $category_class = static::CONFIG_RUNTIME['class_dependencies'][CategoryInterface::class];
+        if ($this->catalog_category_id && !$this->is_property_modified('catalog_category_uuid') ) {
+            $Category = new $category_class($this->catalog_category_id);
+            $this->catalog_category_uuid = $Category->get_uuid();
         }
 
         $images = $this->get_images();
@@ -200,7 +200,7 @@ class Item extends BaseActiveRecord implements ItemInterface
         //it is better to do it this way insted of deleting the images in _after_delete but without taking into account the transaction.
         //there is no way to obtain the current transaction (this is intentional)
         //instead a nested one is started
-        $Transaction = self::new_transaction($TR);
+        $Transaction = static::new_transaction($TR);
         $Transaction->begin();
         $Transaction->add_callback('_after_commit', function(): void
         {
@@ -215,7 +215,7 @@ class Item extends BaseActiveRecord implements ItemInterface
             return new ValidationFailedException($this, 'catalog_category_id', sprintf(t::_('No catalog_category_id provided.')));
         }
         try {
-            $category_class = static::CONFIG_RUNTIME['category_class'];
+            $category_class = static::CONFIG_RUNTIME['class_dependencies'][CategoryInterface::class];
             //$Category = new Category($this->catalog_category_id);
             $Category = new $category_class($this->catalog_category_id);
         } catch (RecordNotFoundException $Exception) {
