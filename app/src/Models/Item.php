@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace GuzabaPlatform\Catalog\Models;
 
+use Azonmedia\Utilities\GeneralUtil;
+use Guzaba2\Authorization\Exceptions\PermissionDeniedException;
 use Guzaba2\Orm\Exceptions\RecordNotFoundException;
 use Guzaba2\Orm\Exceptions\ValidationFailedException;
 use Guzaba2\Orm\Interfaces\ValidationFailedExceptionInterface;
@@ -10,9 +12,12 @@ use Guzaba2\Orm\Transaction;
 use Guzaba2\Transaction\Interfaces\TransactionManagerInterface;
 use Guzaba2\Translator\Translator as t;
 use GuzabaPlatform\Assets\Models\File;
+use GuzabaPlatform\Catalog\Base\Interfaces\CategoryInterface;
 use GuzabaPlatform\Images\Image;
+use GuzabaPlatform\Images\Interfaces\ImageInterface;
 use GuzabaPlatform\Platform\Application\BaseActiveRecord;
 use GuzabaPlatform\Tags\Base\Interfaces\TagInterface;
+use GuzabaPlatform\Catalog\Base\Interfaces\ItemInterface;
 
 /**
  * Class Item
@@ -21,9 +26,10 @@ use GuzabaPlatform\Tags\Base\Interfaces\TagInterface;
  * @property int catalog_item_id
  * @property int catalog_category_id
  * @property string catalog_item_name
+ * @property string catalog_item_description
  * @property float catalog_item_price
  */
-class Item extends BaseActiveRecord implements \GuzabaPlatform\Catalog\Base\Interfaces\Item
+class Item extends BaseActiveRecord implements ItemInterface
 {
 
     protected const CONFIG_DEFAULTS = [
@@ -33,16 +39,120 @@ class Item extends BaseActiveRecord implements \GuzabaPlatform\Catalog\Base\Inte
         'object_name_property'  => 'catalog_item_name',//required by BaseActiveRecord::get_object_name_property()
 
         'images_dir'            => 'products',//relative to the File::CONFIG_RUNTIME['store_relative_base']
+
+        //'category_class'        => Category::class,
+        //'image_class'           => Image::class,
+        'class_dependencies'        => [ //dependencies on other classes
+            //interface                 => implementation
+            CategoryInterface::class    => Category::class,
+            ImageInterface::class       => Image::class,
+        ],
     ];
 
     protected const CONFIG_RUNTIME = [];
 
+    /**
+     * Contains an indexed array with all the images.
+     * Loaded with get_images() from _after_read()
+     * @var array
+     */
+    protected array $images = [];
 
-    public static function create(int $catalog_category_id, string $catalog_item_name, float $catalog_item_price): self
+    /**
+     * Contains the primary object alias. A page (and any other object) may have more than one alias.
+     * @var ?string
+     */
+    public ?string $catalog_item_slug = null;
+
+    /**
+     * To be used when the category is to be set from public source (front-end)
+     * Otherwise catalog_category_id can be used
+     * @var ?string
+     */
+    public ?string $catalog_category_uuid = NULL;
+
+    protected function _after_read(): void
+    {
+
+        if ($this->page_group_id && !$this->is_property_modified('page_group_uuid') ) {
+            $PageGroup = new PageGroup($this->page_group_id);
+            $this->page_group_uuid = $PageGroup->get_uuid();
+        }
+
+        $images = $this->get_images();
+        foreach ($images as $Image) {
+            $this->images[] = $Image->image_path;
+        }
+
+        if ($this->catalog_item_slug === null && !$this->is_property_modified('catalog_item_slug')) {
+            $this->catalog_item_slug = $this->get_alias();
+        }
+    }
+
+    protected function _before_write(): void
+    {
+        if (!$this->catalog_category_id) {
+            if ($this->catalog_category_uuid) {
+                if (GeneralUtil::is_uuid($this->catalog_category_uuid)) {
+                    try {
+                        $category_class = static::CONFIG_RUNTIME['class_dependencies'][CategoryInterface::class];
+                        $Category = new $category_class($this->catalog_category_uuid);
+                        $this->page_group_id = $PageGroup->get_id();
+                    } catch (RecordNotFoundException $Exception) {
+                        throw new ValidationFailedException($this, 'page_group_uuid', sprintf(t::_('There is no page group with the provided UUID %s.'), $this->page_group_uuid) );
+                    } catch (PermissionDeniedException $Exception) {
+                        throw new ValidationFailedException($this, 'page_group_uuid', sprintf(t::_('You are not allowed to read the page group with UUID %s.'), $this->page_group_uuid) );
+                    }
+                    //if (!)
+                } else {
+                    throw new ValidationFailedException($this, 'page_group_uuid', sprintf(t::_('The provided page group UUID %s is not a valid UUID.'), $this->page_group_uuid) );
+                }
+            } else {
+                $this->page_group_id = NULL;
+            }
+        }
+    }
+
+    protected function _after_write(): void
+    {
+        if ($this->is_property_modified('catalog_item_slug')) {
+            $original_slug = $this->get_property_original_value('catalog_item_slug');
+            if ($original_slug) {
+                $this->delete_alias($original_slug);
+            }
+            if ($this->catalog_item_slug) {
+                $this->add_alias($this->page_slug);
+            }
+        }
+
+        if (!$this->catalog_item_slug) {
+            //generate slug based on the product name
+            //$slug = preg_replace('/[^a-zA-Z0-9]/', '-', $this->catalog_item_name);
+            $slug = strtolower(preg_replace(['/[^a-zA-Z0-9 -]/', '/[ -]+/', '/^-|-$/'], ['', '-', ''], $this->catalog_item_name));
+            $this->add_alias($slug);
+        }
+    }
+
+    /**
+     * @param int $catalog_category_id
+     * @param string $catalog_item_name
+     * @param string $catalog_item_description
+     * @param float $catalog_item_price
+     * @return Item
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\LogicException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \Guzaba2\Kernel\Exceptions\ConfigurationException
+     * @throws \ReflectionException
+     */
+    public static function create(int $catalog_category_id, string $catalog_item_name, string $catalog_item_description, float $catalog_item_price): self
     {
         $Item = new static();
         $Item->catalog_category_id = $catalog_category_id;
         $Item->catalog_item_name = $catalog_item_name;
+        $Item->catalog_item_description = $catalog_item_description;
         $Item->catalog_item_price = $catalog_item_price;
         $Item->write();
         return $Item;
@@ -66,12 +176,14 @@ class Item extends BaseActiveRecord implements \GuzabaPlatform\Catalog\Base\Inte
         //better use relative paths as the project needs to be portable
         //Image::create($this, $File->get_relative_path());
         //use absolute path as the image can not be deleted after that (the Image class has no knowledge of any storage)
-        Image::create($this, $File->get_absolute_path());
+        $image_class = static::CONFIG_RUNTIME['class_dependencies'][ImageInterface::class];
+        $image_class::create($this, $File->get_absolute_path());
     }
 
     public function get_images(): array
     {
-        return Image::get_by( ['image_class_id' => self::get_class_id(), 'image_object_id' => $this->get_id() ] );
+        $image_class = static::CONFIG_RUNTIME['class_dependencies'][ImageInterface::class];
+        return $image_class::get_by( ['image_class_id' => self::get_class_id(), 'image_object_id' => $this->get_id() ] );
     }
 
     public function delete_images(): void
@@ -103,7 +215,9 @@ class Item extends BaseActiveRecord implements \GuzabaPlatform\Catalog\Base\Inte
             return new ValidationFailedException($this, 'catalog_category_id', sprintf(t::_('No catalog_category_id provided.')));
         }
         try {
-            $Category = new Category($this->catalog_category_id);
+            $category_class = static::CONFIG_RUNTIME['category_class'];
+            //$Category = new Category($this->catalog_category_id);
+            $Category = new $category_class($this->catalog_category_id);
         } catch (RecordNotFoundException $Exception) {
             $message = sprintf(t::_('There is no %1$s with catalog_category_id %2$s.'), Category::class, $this->catalog_category_id );
             return new ValidationFailedException($this, 'catalog_category_id', $message);

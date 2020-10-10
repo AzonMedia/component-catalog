@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace GuzabaPlatform\Catalog\Models;
 
 use Guzaba2\Orm\Interfaces\ValidationFailedExceptionInterface;
+use GuzabaPlatform\Catalog\Base\Interfaces\CategoryInterface;
 use GuzabaPlatform\Platform\Application\BaseActiveRecord;
 use GuzabaPlatform\Tags\Base\Interfaces\TagInterface;
+use GuzabaPlatform\Catalog\Base\Interfaces\ItemInterface;
 
 /**
  * Class Category
@@ -15,14 +17,20 @@ use GuzabaPlatform\Tags\Base\Interfaces\TagInterface;
  * @property int|null   parent_catalog_category_id
  * @property string     catalog_category_name
  */
-class Category extends BaseActiveRecord implements \GuzabaPlatform\Catalog\Base\Interfaces\Category
+class Category extends BaseActiveRecord implements CategoryInterface
 {
 
     protected const CONFIG_DEFAULTS = [
-        'main_table' => 'catalog_categories',
-        'route' => '/admin/catalog/category',//to be used for editing and deleting
+        'main_table'            => 'catalog_categories',
+        'route'                 => '/admin/catalog/category',//to be used for editing and deleting
 
         'object_name_property'  => 'catalog_category_name',//required by BaseActiveRecord::get_object_name_property()
+
+        //'item_class'            => Item::class,
+        'class_dependencies'        => [ //dependencies on other classes
+            //intefaces => implementation
+            ItemInterface::class    => Item::class,
+        ],
     ];
 
     protected const CONFIG_RUNTIME = [];
@@ -64,12 +72,13 @@ class Category extends BaseActiveRecord implements \GuzabaPlatform\Catalog\Base\
      */
     public function get_items(): iterable
     {
-        return Item::get_by( ['catalog_category_id' => $this->get_id() ] );
+        $item_class = static::CONFIG_RUNTIME['class_dependencies'][ItemInterface::class];
+        return $item_class::get_by( ['catalog_category_id' => $this->get_id() ] );
     }
 
     public function get_categories(): iterable
     {
-        return Category::get_by( ['parent_catalog_category_id' => $this->get_id() ] );
+        return static::get_by( ['parent_catalog_category_id' => $this->get_id() ] );
     }
 
     /**
