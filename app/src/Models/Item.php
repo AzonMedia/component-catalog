@@ -59,7 +59,7 @@ class Item extends BaseActiveRecord implements ItemInterface
     public array $images = [];
 
     /**
-     * Contains the primary object alias. A page (and any other object) may have more than one alias.
+     * Contains the primary object alias. A catalog item (and any other object) may have more than one alias.
      * @var ?string
      */
     public ?string $catalog_item_slug = null;
@@ -80,6 +80,7 @@ class Item extends BaseActiveRecord implements ItemInterface
         }
 
         $images = $this->get_images();
+        $images_paths = [];
         foreach ($images as $Image) {
             $this->images[] = $Image->image_path;
         }
@@ -97,18 +98,18 @@ class Item extends BaseActiveRecord implements ItemInterface
                     try {
                         $category_class = static::CONFIG_RUNTIME['class_dependencies'][CategoryInterface::class];
                         $Category = new $category_class($this->catalog_category_uuid);
-                        $this->page_group_id = $PageGroup->get_id();
+                        $this->catalog_category_id = $Category->get_id();
                     } catch (RecordNotFoundException $Exception) {
-                        throw new ValidationFailedException($this, 'page_group_uuid', sprintf(t::_('There is no page group with the provided UUID %s.'), $this->page_group_uuid) );
+                        throw new ValidationFailedException($this, 'catalog_category_uuid', sprintf(t::_('There is no category with the provided UUID %s.'), $this->catalog_category_uuid) );
                     } catch (PermissionDeniedException $Exception) {
-                        throw new ValidationFailedException($this, 'page_group_uuid', sprintf(t::_('You are not allowed to read the page group with UUID %s.'), $this->page_group_uuid) );
+                        throw new ValidationFailedException($this, 'catalog_category_uuid', sprintf(t::_('You are not allowed to read the category with UUID %s.'), $this->catalog_category_uuid) );
                     }
                     //if (!)
                 } else {
-                    throw new ValidationFailedException($this, 'page_group_uuid', sprintf(t::_('The provided page group UUID %s is not a valid UUID.'), $this->page_group_uuid) );
+                    throw new ValidationFailedException($this, 'catalog_category_uuid', sprintf(t::_('The provided category UUID %s is not a valid UUID.'), $this->catalog_category_uuid) );
                 }
             } else {
-                $this->page_group_id = NULL;
+                $this->catalog_category_id = NULL;
             }
         }
     }
@@ -121,7 +122,7 @@ class Item extends BaseActiveRecord implements ItemInterface
                 $this->delete_alias($original_slug);
             }
             if ($this->catalog_item_slug) {
-                $this->add_alias($this->page_slug);
+                $this->add_alias($this->catalog_item_slug);
             }
         }
 
@@ -183,7 +184,8 @@ class Item extends BaseActiveRecord implements ItemInterface
     public function get_images(): array
     {
         $image_class = static::CONFIG_RUNTIME['class_dependencies'][ImageInterface::class];
-        return $image_class::get_by( ['image_class_id' => self::get_class_id(), 'image_object_id' => $this->get_id() ] );
+        $ret = $image_class::get_by( [ 'image_class_id' => self::get_class_id(), 'image_object_id' => $this->get_id() ] );
+        return $ret;
     }
 
     public function delete_images(): void

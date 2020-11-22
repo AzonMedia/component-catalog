@@ -11,7 +11,10 @@
             <div class="col-1">
                 <b-icon-file-text class="clickable" @click="$parent.open_item(ItemData.meta_object_uuid)"></b-icon-file-text>
             </div>
-            <div class="col-9" style="text-align: left">
+            <div class="col-1">
+                {{ItemData.catalog_item_id}}
+            </div>
+            <div class="col-8" style="text-align: left">
                 <span class="clickable" @click="$parent.open_item(ItemData.meta_object_uuid)">{{ItemData.catalog_item_name}}</span>
             </div>
             <div class="col-2" v-if="typeof $parent.EmbeddedData === 'undefined' ">

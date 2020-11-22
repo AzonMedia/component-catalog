@@ -3,7 +3,13 @@ declare(strict_types=1);
 
 namespace GuzabaPlatform\Catalog\Models;
 
+use Azonmedia\Utilities\GeneralUtil;
+use Guzaba2\Authorization\Exceptions\PermissionDeniedException;
+use Guzaba2\Base\Exceptions\InvalidArgumentException;
+use Guzaba2\Orm\Exceptions\RecordNotFoundException;
+use Guzaba2\Orm\Exceptions\ValidationFailedException;
 use Guzaba2\Orm\Interfaces\ValidationFailedExceptionInterface;
+use Guzaba2\Translator\Translator as t;
 use GuzabaPlatform\Catalog\Base\Interfaces\CategoryInterface;
 use GuzabaPlatform\Platform\Application\BaseActiveRecord;
 use GuzabaPlatform\Tags\Base\Interfaces\TagInterface;
@@ -35,6 +41,44 @@ class Category extends BaseActiveRecord implements CategoryInterface
 
     protected const CONFIG_RUNTIME = [];
 
+    /**
+     * To be used when the parent page group is to be set from public source (front-end)
+     * Otherwise parent_catalog_category_id can be used
+     * @var ?string
+     */
+    public ?string $parent_catalog_category_uuid = NULL;
+
+    protected function _after_read(): void
+    {
+        if ($this->parent_catalog_category_id) {
+            $ParentCategory = new static($this->parent_catalog_category_id);
+            $this->parent_catalog_category_uuid = $ParentCategory->get_uuid();
+        }
+    }
+
+    protected function _before_write(): void
+    {
+
+        if (!$this->parent_catalog_category_id) {
+            if ($this->parent_catalog_category_uuid) {
+                if (GeneralUtil::is_uuid($this->parent_catalog_category_uuid)) {
+                    try {
+                        $ParentCategory = new static($this->parent_catalog_category_uuid);
+                        $this->parent_catalog_category_id = $ParentCategory->get_id();
+                    } catch (RecordNotFoundException $Exception) {
+                        throw new ValidationFailedException($this, 'parent_catalog_category_uuid', sprintf(t::_('There is no category with the provided UUID %s.'), $this->parent_catalog_category_uuid) );
+                    } catch (PermissionDeniedException $Exception) {
+                        throw new ValidationFailedException($this, 'parent_catalog_category_uuid', sprintf(t::_('You are not allowed to read the category with UUID %s.'), $this->parent_catalog_category_uuid) );
+                    }
+                } else {
+                    throw new ValidationFailedException($this, 'parent_catalog_category_uuid', sprintf(t::_('The provided parent category UUID %s is not a valid UUID.'), $this->parent_catalog_category_uuid) );
+                }
+            } else {
+                $this->parent_catalog_category_id = NULL;
+            }
+        }
+    }
+
     public static function create(?int $parent_catalog_category_id, string $catalog_category_name): self
     {
         $Category = new static();
@@ -42,6 +86,41 @@ class Category extends BaseActiveRecord implements CategoryInterface
         $Category->catalog_category_name = $catalog_category_name;
         $Category->write();
         return $Category;
+    }
+
+    /**
+     * Returns an associative array with category UUID=>name with the path to this category
+     * @return array
+     */
+    public function get_path(): array
+    {
+        $path = [];
+        $Category = $this;
+        do {
+            $path[$Category->get_uuid()] = $Category->catalog_category_name;
+            $Category = $Category->get_parent_category();
+        } while ($Category);
+        $path = array_reverse($path);
+        return $path;
+    }
+
+    /**
+     * @return CategoryInterface|null
+     * @throws InvalidArgumentException
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\LogicException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \Guzaba2\Kernel\Exceptions\ConfigurationException
+     * @throws \ReflectionException
+     */
+    public function get_parent_category(): ?CategoryInterface
+    {
+        $ret = null;
+        if ($this->parent_catalog_category_id) {
+            $ret = new static($this->parent_catalog_category_id);
+        }
+        return $ret;
     }
 
     protected function _validate_parent_catalog_category_id(): ?ValidationFailedExceptionInterface

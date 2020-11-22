@@ -143,9 +143,9 @@
                     this.EmbeddedData.open_category(this, catalog_category_uuid)
                 } else {
                     if (catalog_category_uuid) {
-                        this.$router.push('/admin/cms/' + catalog_category_uuid);
+                        this.$router.push('/admin/catalog/' + catalog_category_uuid);
                     } else {
-                        this.$router.push('/admin/cms');
+                        this.$router.push('/admin/catalog');
                     }
                 }
             },
@@ -198,22 +198,26 @@
             delete_category(catalog_category_uuid, catalog_category_name) {
                 this.DeleteElement.modal_title = 'Delete category ' + catalog_category_name;
                 this.DeleteElement.name = catalog_category_name;
-                this.DeleteElement.url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Category:crud_action_delete', catalog_category_uuid);
+                //this.DeleteElement.url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Category:crud_action_delete', catalog_category_uuid);
+                this.DeleteElement.url = '/admin/catalog/category/' + catalog_category_uuid
                 this.DeleteElement.type = 'Category';
                 this.$bvModal.show('delete-element-modal');
             },
             delete_item(catalog_item_uuid, catalog_item_name) {
                 this.DeleteElement.modal_title = 'Delete item ' + catalog_item_name;
                 this.DeleteElement.name = catalog_item_name;
-                this.DeleteElement.url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Item:crud_action_delete', catalog_item_uuid);
+                //this.DeleteElement.url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Item:crud_action_delete', catalog_item_uuid);
+                this.DeleteElement.url = '/admin/catalog/item/' + catalog_item_uuid
                 this.DeleteElement.type = 'Item';
                 this.$bvModal.show('delete-element-modal');
             },
 
             get_category_contents(catalog_category_uuid) {
                 this.catalog_category_uuid = catalog_category_uuid;
+                console.log(this.get_route('GuzabaPlatform\\Catalog\\Controllers\\Items:main', catalog_category_uuid));
                 this.$http.get( this.get_route('GuzabaPlatform\\Catalog\\Controllers\\Items:main', catalog_category_uuid) )
                     .then(resp => {
+                        console.log(resp)
                         this.categories = resp.data.categories;
                         this.items = resp.data.items;
                         this.CategoryPath = resp.data.category_path;
@@ -222,7 +226,7 @@
                         //self.show_toast(err.response.data.message);
                         this.error_message = err.response.data.message;
                     }).finally(function(){
-
+console.log('finally')
                     });
             },
 
@@ -279,7 +283,7 @@
     .error-message {
         border: 2px solid red;
     }
-    .page-group-path-element {
+    .category-path-element {
         cursor: pointer;
         text-decoration: underline;
     }

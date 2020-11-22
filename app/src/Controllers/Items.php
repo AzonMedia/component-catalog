@@ -59,11 +59,14 @@ class Items extends BaseController
         $CurrentUser = self::get_service('CurrentUser');
         $date_time_format = $CurrentUser->get()->get_date_time_format();
 
-        $struct['categories'] = ArrayUtil::frontify($categories_class::get_by_catalog_category_uuid($catalog_category_uuid),  $date_time_format );
-        $struct['items'] = ArrayUtil::frontify( $items_class::get_by_catalog_category_uuid($catalog_category_uuid), $date_time_format );
+        //lets expose the products & Categories IDs as these are needed for the settings (which product ID is tobe featured)
+        //$struct['categories'] = ArrayUtil::frontify($categories_class::get_by_catalog_category_uuid($catalog_category_uuid),  $date_time_format );
+        //$struct['items'] = ArrayUtil::frontify( $items_class::get_by_catalog_category_uuid($catalog_category_uuid), $date_time_format );
+        $struct['categories'] = $categories_class::get_by_catalog_category_uuid($catalog_category_uuid);
+        $struct['items'] = $items_class::get_by_catalog_category_uuid($catalog_category_uuid);
         if ($catalog_category_uuid) {
             $Category = new $category_class($catalog_category_uuid);
-            $struct['category_path'] = $PageGroup->get_path();
+            $struct['category_path'] = $Category->get_path();
         } else {
             $struct['category_path'] = [];
         }
