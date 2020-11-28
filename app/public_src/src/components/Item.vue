@@ -6,16 +6,18 @@
     <b-icon-pencil variant="primary"></b-icon-pencil>
     <b-icon-trash variant="danger"></b-icon-trash>
     -->
-    <div class="container" :class="{ highlighted_element: $parent.highlighted_catalog_item_uuid === ItemData.meta_object_uuid}">
+    <div class="container" :class="{ highlighted_element: $parent.highlighted_catalog_entry_uuid === ItemData.meta_object_uuid}">
         <div class="row">
             <div class="col-1">
-                <b-icon-file-text class="clickable" @click="$parent.open_item(ItemData.meta_object_uuid)"></b-icon-file-text>
+                <!-- <b-icon-file-text class="clickable" @click="$parent.open_item(ItemData.meta_object_uuid)"></b-icon-file-text> -->
+                <b-icon-file-text class="clickable" @click="$parent.click_item(ItemData.meta_object_uuid)" @dblclick="$parent.dblclick_item(ItemData.meta_object_uuid)"></b-icon-file-text>
             </div>
             <div class="col-1">
-                {{ItemData.catalog_item_id}}
+                <span class="clickable" @click="$parent.click_item(ItemData.meta_object_uuid)" @dblclick="$parent.dblclick_item(ItemData.meta_object_uuid)">{{ItemData.catalog_item_id}}</span>
             </div>
             <div class="col-8" style="text-align: left">
-                <span class="clickable" @click="$parent.open_item(ItemData.meta_object_uuid)">{{ItemData.catalog_item_name}}</span>
+                <!-- <span class="clickable" @click="$parent.open_item(ItemData.meta_object_uuid)">{{ItemData.catalog_item_name}}</span> -->
+                <span class="clickable" @click="$parent.click_item(ItemData.meta_object_uuid)" @dblclick="$parent.dblclick_item(ItemData.meta_object_uuid)">{{ItemData.catalog_item_name}}</span>
             </div>
             <div class="col-2" v-if="typeof $parent.EmbeddedData === 'undefined' ">
                 <!--

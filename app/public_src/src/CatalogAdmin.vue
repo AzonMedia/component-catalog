@@ -106,7 +106,10 @@
                     url: '',
                     name: '',
                 },
-                highlighted_catalog_item_uuid: '',
+                /**
+                 * there can be only one highlighted entry - category or item
+                 */
+                highlighted_catalog_entry_uuid: '',
                 catalog_category_uuid: '',
                 error_message: '',
                 categories: [],
@@ -137,26 +140,66 @@
                 this.$bvModal.show('category-modal');
             },
 
+            /**
+             * @param string catalog_category_uuid
+             */
+            click_category(catalog_category_uuid) {
+                if (typeof this.EmbeddedData !== 'undefined' && typeof this.EmbeddedData.click_category === 'function') {
+                    //this.get_groups_and_items(catalog_category_uuid)
+                    return this.EmbeddedData.click_category(this, catalog_category_uuid)
+                } else {
+                    //do nothing
+                }
+            },
+
+            /**
+             * @param string catalog_category_uuid
+             */
+            dblclick_category(catalog_category_uuid) {
+                if (typeof this.EmbeddedData !== 'undefined' && typeof this.EmbeddedData.dblclick_category === 'function') {
+                    //this.get_groups_and_items(catalog_category_uuid)
+                    return this.EmbeddedData.dblclick_category(this, catalog_category_uuid)
+                } else {
+                    return this.open_category(catalog_category_uuid)
+                }
+
+            },
+
+            click_item(catalog_item_uuid) {
+                if (typeof this.EmbeddedData !== 'undefined' && typeof this.EmbeddedData.click_item === 'function') {
+                    return this.EmbeddedData.click_item(this, catalog_item_uuid)
+                } else {
+                    //do nothing
+                }
+            },
+            dblclick_item(catalog_item_uuid) {
+                if (typeof this.EmbeddedData !== 'undefined' && typeof this.EmbeddedData.dblclick_item === 'function') {
+                    return this.EmbeddedData.dblclick_item(this, catalog_item_uuid)
+                } else {
+                    return this.open_item(catalog_item_uuid)
+                }
+            },
+
             open_category(catalog_category_uuid) {
                 if (typeof this.EmbeddedData !== 'undefined' && typeof this.EmbeddedData.open_category === 'function') {
                     //this.get_groups_and_items(catalog_category_uuid)
-                    this.EmbeddedData.open_category(this, catalog_category_uuid)
+                    return this.EmbeddedData.open_category(this, catalog_category_uuid)
                 } else {
                     if (catalog_category_uuid) {
-                        this.$router.push('/admin/catalog/' + catalog_category_uuid);
+                        return this.$router.push('/admin/catalog/' + catalog_category_uuid)
                     } else {
-                        this.$router.push('/admin/catalog');
+                        return this.$router.push('/admin/catalog');
                     }
                 }
             },
             open_item(catalog_item_uuid) {
 
                 if (typeof this.EmbeddedData !== 'undefined' && typeof this.EmbeddedData.open_item === 'function') {
-                    this.EmbeddedData.open_item(this, catalog_item_uuid)
+                    return this.EmbeddedData.open_item(this, catalog_item_uuid)
                 } else {
-                    alert('showing revisions is not implemented') //TODO - fix this - open for edit
+                    //alert('showing revisions is not implemented') //TODO - fix this - open for edit
+                    return this.edit_item(catalog_item_uuid)
                 }
-
             },
 
             edit_category(catalog_category_uuid, catalog_category_name) {

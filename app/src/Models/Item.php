@@ -82,7 +82,7 @@ class Item extends BaseActiveRecord implements ItemInterface
         $images = $this->get_images();
         $images_paths = [];
         foreach ($images as $Image) {
-            $this->images[] = $Image->image_path;
+            $this->images[] = realpath($Image->image_path);
         }
 
         if ($this->catalog_item_slug === null && !$this->is_property_modified('catalog_item_slug')) {

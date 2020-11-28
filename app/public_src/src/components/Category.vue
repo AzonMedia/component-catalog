@@ -1,14 +1,16 @@
 <template>
-    <div class="container">
+    <div class="container" :class="{ highlighted_element: $parent.highlighted_catalog_entry_uuid === CategoryData.meta_object_uuid}">
         <div class="row">
             <div class="col-1">
-                <b-icon-folder class="clickable" @click="$parent.open_category(CategoryData.meta_object_uuid)"></b-icon-folder>
+                <!-- <b-icon-folder class="clickable" @click="$parent.open_category(CategoryData.meta_object_uuid)"></b-icon-folder> -->
+                <b-icon-folder class="clickable" @click="$parent.click_category(CategoryData.meta_object_uuid)" @dblclick="$parent.dblclick_category(CategoryData.meta_object_uuid)"></b-icon-folder>
             </div>
             <div class="col-1">
-                {{CategoryData.catalog_category_id}}
+                <span class="clickable" @click="$parent.click_category(CategoryData.meta_object_uuid)" @dblclick="$parent.dblclick_category(CategoryData.meta_object_uuid)">{{CategoryData.catalog_category_id}}</span>
             </div>
             <div class="col-8" style="text-align: left">
-                <span class="clickable" @click="$parent.open_category(CategoryData.meta_object_uuid)">{{CategoryData.catalog_category_name}}</span>
+                <!-- <span class="clickable" @click="$parent.open_category(CategoryData.meta_object_uuid)">{{CategoryData.catalog_category_name}}</span> -->
+                <span class="clickable" @click="$parent.click_category(CategoryData.meta_object_uuid)" @dblclick="$parent.dblclick_category(CategoryData.meta_object_uuid)">{{CategoryData.catalog_category_name}}</span>
             </div>
             <div class="col-2" v-if="typeof $parent.EmbeddedData === 'undefined' ">
                 <b-icon-list-check
