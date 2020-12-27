@@ -148,7 +148,7 @@
                     //this.get_groups_and_items(catalog_category_uuid)
                     return this.EmbeddedData.click_category(this, catalog_category_uuid)
                 } else {
-                    //do nothing
+                    return this.open_category(catalog_category_uuid)
                 }
             },
 
@@ -170,6 +170,7 @@
                     return this.EmbeddedData.click_item(this, catalog_item_uuid)
                 } else {
                     //do nothing
+                    return this.open_item(catalog_item_uuid)
                 }
             },
             dblclick_item(catalog_item_uuid) {
@@ -186,8 +187,10 @@
                     return this.EmbeddedData.open_category(this, catalog_category_uuid)
                 } else {
                     if (catalog_category_uuid) {
+                        //return this.$router.push('/admin/catalog/' + catalog_category_uuid)
                         return this.$router.push('/admin/catalog/' + catalog_category_uuid)
                     } else {
+                        //return this.$router.push('/admin/catalog');
                         return this.$router.push('/admin/catalog');
                     }
                 }
@@ -221,28 +224,34 @@
 
             permissions_category(catalog_category_uuid, catalog_category_name) {
                 let row = {};
+                const Category = this.get_category(catalog_category_uuid)
                 row.meta_object_uuid = catalog_category_uuid;
-                row.meta_class_name = 'GuzabaPlatform\\Catalog\\Models\\Category';//not really needed as the title is overriden
-                this.$refs.Crud.selectedClassName = 'GuzabaPlatform\\Catalog\\Models\\Category';
-                this.$refs.Crud.selectedObject.meta_object_uuid = catalog_category_uuid;
-                this.$refs.Crud.showPermissions(row);
-                this.$refs.Crud.title_permissions = 'Permissions for Category "' + catalog_category_name + '"';
+                //row.meta_class_name = 'GuzabaPlatform\\Catalog\\Models\\Category' //not really needed as the title is overriden
+                row.meta_class_name = Category.meta_class_name //not really needed as the title is overriden
+                //this.$refs.Crud.selectedClassName = 'GuzabaPlatform\\Catalog\\Models\\Category'
+                this.$refs.Crud.selectedClassName = Category.meta_class_name
+                this.$refs.Crud.selectedObject.meta_object_uuid = catalog_category_uuid
+                this.$refs.Crud.showPermissions(row)
+                this.$refs.Crud.title_permissions = 'Permissions for Category "' + catalog_category_name + '"'
             },
             permissions_item(catalog_item_uuid, catalog_item_name) {
                 let row = {};
-                row.meta_object_uuid = catalog_item_uuid;
-                row.meta_class_name = 'GuzabaPlatform\\Catalog\\Models\\Item';//not really needed as the title is overriden
-                this.$refs.Crud.selectedClassName = 'GuzabaPlatform\\Catalog\\Models\\Item';
-                this.$refs.Crud.selectedObject.meta_object_uuid = catalog_item_uuid;
-                this.$refs.Crud.showPermissions(row);
-                this.$refs.Crud.title_permissions = 'Permissions for Item "' + catalog_item_name + '"';
+                const Item = this.get_item(catalog_item_uuid)
+                row.meta_object_uuid = catalog_item_uuid
+                //row.meta_class_name = 'GuzabaPlatform\\Catalog\\Models\\Item' //not really needed as the title is overriden
+                row.meta_class_name = Item.meta_class_name
+                //this.$refs.Crud.selectedClassName = 'GuzabaPlatform\\Catalog\\Models\\Item'
+                this.$refs.Crud.selectedClassName = Item.meta_class_name
+                this.$refs.Crud.selectedObject.meta_object_uuid = catalog_item_uuid
+                this.$refs.Crud.showPermissions(row)
+                this.$refs.Crud.title_permissions = 'Permissions for Item "' + catalog_item_name + '"'
             },
 
             delete_category(catalog_category_uuid, catalog_category_name) {
                 this.DeleteElement.modal_title = 'Delete category ' + catalog_category_name;
                 this.DeleteElement.name = catalog_category_name;
                 //this.DeleteElement.url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Category:crud_action_delete', catalog_category_uuid);
-                this.DeleteElement.url = '/admin/catalog/category/' + catalog_category_uuid
+                this.DeleteElement.url = '/catalog/category/' + catalog_category_uuid
                 this.DeleteElement.type = 'Category';
                 this.$bvModal.show('delete-element-modal');
             },
@@ -250,14 +259,14 @@
                 this.DeleteElement.modal_title = 'Delete item ' + catalog_item_name;
                 this.DeleteElement.name = catalog_item_name;
                 //this.DeleteElement.url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Item:crud_action_delete', catalog_item_uuid);
-                this.DeleteElement.url = '/admin/catalog/item/' + catalog_item_uuid
+                this.DeleteElement.url = '/catalog/item/' + catalog_item_uuid
                 this.DeleteElement.type = 'Item';
                 this.$bvModal.show('delete-element-modal');
             },
 
             get_category_contents(catalog_category_uuid) {
                 this.catalog_category_uuid = catalog_category_uuid;
-                console.log(this.get_route('GuzabaPlatform\\Catalog\\Controllers\\Items:main', catalog_category_uuid));
+                //console.log(this.get_route('GuzabaPlatform\\Catalog\\Controllers\\Items:main', catalog_category_uuid));
                 this.$http.get( this.get_route('GuzabaPlatform\\Catalog\\Controllers\\Items:main', catalog_category_uuid) )
                     .then(resp => {
                         console.log(resp)
@@ -269,7 +278,7 @@
                         //self.show_toast(err.response.data.message);
                         this.error_message = err.response.data.message;
                     }).finally(function(){
-console.log('finally')
+
                     });
             },
 

@@ -34,7 +34,10 @@ class Item extends BaseActiveRecord implements ItemInterface
 
     protected const CONFIG_DEFAULTS = [
         'main_table'            => 'catalog_items',
-        'route'                 => '/admin/catalog/item',//to be used for editing and deleting
+        //'route'                 => '/admin/catalog/item',//to be used for editing and deleting
+        //without /admin/ as this is not a strictly admin component
+        //also the view item should be public
+        'route'                 => '/catalog/item',//to be used for editing and deleting
 
         'object_name_property'  => 'catalog_item_name',//required by BaseActiveRecord::get_object_name_property()
 
@@ -47,6 +50,9 @@ class Item extends BaseActiveRecord implements ItemInterface
             CategoryInterface::class    => Category::class,
             ImageInterface::class       => Image::class,
         ],
+        'services'             => [
+            'GuzabaPlatform',
+        ]
     ];
 
     protected const CONFIG_RUNTIME = [];
@@ -79,10 +85,17 @@ class Item extends BaseActiveRecord implements ItemInterface
             $this->catalog_category_uuid = $Category->get_uuid();
         }
 
+        $GuzabaPlatform = self::get_service('GuzabaPlatform');
+        $public_dir = $GuzabaPlatform->get_public_dir();
         $images = $this->get_images();
         $images_paths = [];
         foreach ($images as $Image) {
-            $this->images[] = realpath($Image->image_path);
+            //$this->images[] = realpath($Image->image_path);
+            //better store the public asset path (accessible through browser), not the absolute image path
+            //or both - as associative array
+            $realpath = realpath($Image->image_path);
+            //$this->images[$realpath] = str_replace($public_dir, '', $realpath);
+            $this->images[] = str_replace($public_dir, '', $realpath);
         }
 
         if ($this->catalog_item_slug === null && !$this->is_property_modified('catalog_item_slug')) {
@@ -164,6 +177,11 @@ class Item extends BaseActiveRecord implements ItemInterface
         return self::CONFIG_RUNTIME['images_dir'];
     }
 
+    /**
+     * @param string $image_url
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Azonmedia\Exceptions\RunTimeException
+     */
     public function add_image(string $image_url): void
     {
         $relative_path = self::CONFIG_RUNTIME['images_dir'].'/'.$this->get_uuid();//lets put the product images in individual subfolder (in case of image name collisions)
@@ -171,6 +189,9 @@ class Item extends BaseActiveRecord implements ItemInterface
         $this->add_image_from_file($File);
     }
 
+    /**
+     * @param File $File
+     */
     public function add_image_from_file(File $File): void
     {
         //Image::create($this, $File->get_absolute_path());
@@ -181,6 +202,14 @@ class Item extends BaseActiveRecord implements ItemInterface
         $image_class::create($this, $File->get_absolute_path());
     }
 
+    /**
+     * @return array
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \ReflectionException
+     */
     public function get_images(): array
     {
         $image_class = static::CONFIG_RUNTIME['class_dependencies'][ImageInterface::class];
@@ -188,6 +217,13 @@ class Item extends BaseActiveRecord implements ItemInterface
         return $ret;
     }
 
+    /**
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \ReflectionException
+     */
     public function delete_images(): void
     {
         foreach ($this->get_images() as $Image) {
@@ -195,6 +231,12 @@ class Item extends BaseActiveRecord implements ItemInterface
         }
     }
 
+    /**
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \ReflectionException
+     */
     protected function _before_delete(): void
     {
         //if there delete transaction is successful delete the images
@@ -211,6 +253,14 @@ class Item extends BaseActiveRecord implements ItemInterface
         $Transaction->commit();
     }
 
+    /**
+     * @return ValidationFailedExceptionInterface|null
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \ReflectionException
+     */
     protected function _validate_catalog_category_id(): ?ValidationFailedExceptionInterface
     {
         if (!$this->catalog_category_id) {
@@ -260,5 +310,11 @@ class Item extends BaseActiveRecord implements ItemInterface
     public function remove_tag(TagInterface $TagInterface): bool
     {
         // TODO: Implement remove_tag() method.
+    }
+
+    public function get_category(): CategoryInterface
+    {
+        $category_class = static::CONFIG_RUNTIME['class_dependencies'][CategoryInterface::class];
+        return new $category_class($this->catalog_category_id);
     }
 }

@@ -28,7 +28,8 @@ class Category extends BaseActiveRecord implements CategoryInterface
 
     protected const CONFIG_DEFAULTS = [
         'main_table'            => 'catalog_categories',
-        'route'                 => '/admin/catalog/category',//to be used for editing and deleting
+        //'route'                 => '/admin/catalog/category',//to be used for editing and deleting
+        'route'                 => '/catalog/category',//to be used for editing and deleting
 
         'object_name_property'  => 'catalog_category_name',//required by BaseActiveRecord::get_object_name_property()
 

@@ -72,10 +72,10 @@
         methods: {
             modal_ok_handler(bvModalEvent) {
                 //let url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Item:crud_action_create')
-                let url = '/admin/catalog/item'
+                let url = '/catalog/item'
                 if (this.catalog_item_uuid) {
                     //url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Item:crud_action_update', this.catalog_item_uuid)
-                    url = '/admin/catalog/item/' + this.catalog_item_uuid
+                    url = '/catalog/item/' + this.catalog_item_uuid
                 }
                 let SendValues = {};
                 SendValues.catalog_item_name = this.catalog_item_name;
@@ -112,6 +112,7 @@
                 if (this.ItemData.catalog_item_uuid) {
                     this.$http.get(this.get_route('GuzabaPlatform\\Catalog\\Models\\Item:crud_action_read', this.ItemData.catalog_item_uuid))
                         .then(resp => {
+                            console.log(resp)
                             this.catalog_item_name          = resp.data.catalog_item_name;
                             this.catalog_item_slug          = resp.data.catalog_item_slug;
                             this.catalog_item_description   = resp.data.catalog_item_description;
