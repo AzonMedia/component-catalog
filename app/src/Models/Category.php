@@ -33,6 +33,8 @@ class Category extends BaseActiveRecord implements CategoryInterface
 
         'object_name_property'  => 'catalog_category_name',//required by BaseActiveRecord::get_object_name_property()
 
+        'automate_slug'         => true,//should a slug (alias) be generated automatically if it is empty
+
         //'item_class'            => Item::class,
         'class_dependencies'        => [ //dependencies on other classes
             //intefaces => implementation
@@ -49,14 +51,35 @@ class Category extends BaseActiveRecord implements CategoryInterface
      */
     public ?string $parent_catalog_category_uuid = NULL;
 
+    /**
+     * Contains the primary object alias. An object may have more than one alias.
+     * @var ?string
+     */
+    public ?string $catalog_category_slug = NULL;
+
     protected function _after_read(): void
     {
         if ($this->parent_catalog_category_id) {
             $ParentCategory = new static($this->parent_catalog_category_id);
             $this->parent_catalog_category_uuid = $ParentCategory->get_uuid();
         }
+
+        //the property may be NULL not because it is not set/initialized but because it was explicitely set to NULL on another instance
+        if ($this->catalog_category_slug === null && !$this->is_property_modified('catalog_category_slug')) {
+            $this->catalog_category_slug = $this->get_alias();
+        }
     }
 
+    /**
+     * @throws InvalidArgumentException
+     * @throws ValidationFailedException
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\LogicException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \Guzaba2\Kernel\Exceptions\ConfigurationException
+     * @throws \ReflectionException
+     */
     protected function _before_write(): void
     {
 
@@ -80,6 +103,48 @@ class Category extends BaseActiveRecord implements CategoryInterface
         }
     }
 
+    /**
+     * @throws InvalidArgumentException
+     * @throws RecordNotFoundException
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\LogicException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \Guzaba2\Kernel\Exceptions\ConfigurationException
+     * @throws \ReflectionException
+     */
+    protected function _after_write(): void
+    {
+        if (self::CONFIG_RUNTIME['automate_slug']) {
+            if ($this->catalog_category_slug === null) {
+                $this->catalog_category_slug = self::convert_to_slug($this->catalog_category_name);
+            }
+        }
+
+
+        if ($this->is_property_modified('catalog_category_slug')) {
+            $original_slug = $this->get_property_original_value('catalog_category_slug');
+            if ($original_slug) {
+                $this->delete_alias($original_slug);
+            }
+            if ($this->catalog_category_slug) {
+                $this->add_alias($this->catalog_category_slug);
+            }
+        }
+    }
+
+    /**
+     * @param int|null $parent_catalog_category_id
+     * @param string $catalog_category_name
+     * @return Category
+     * @throws InvalidArgumentException
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\LogicException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \Guzaba2\Kernel\Exceptions\ConfigurationException
+     * @throws \ReflectionException
+     */
     public static function create(?int $parent_catalog_category_id, string $catalog_category_name): self
     {
         $Category = new static();
@@ -124,6 +189,7 @@ class Category extends BaseActiveRecord implements CategoryInterface
         return $ret;
     }
 
+
     protected function _validate_parent_catalog_category_id(): ?ValidationFailedExceptionInterface
     {
         //check the parent category exists
@@ -131,6 +197,12 @@ class Category extends BaseActiveRecord implements CategoryInterface
         return null;
     }
 
+    /**
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \ReflectionException
+     */
     protected function _before_delete(): void
     {
         //delete all items in this category
@@ -144,7 +216,7 @@ class Category extends BaseActiveRecord implements CategoryInterface
     }
 
     /**
-     * @return iterable
+     * @return ItemInterface[]
      * @throws \Azonmedia\Exceptions\InvalidArgumentException
      * @throws \Guzaba2\Base\Exceptions\RunTimeException
      * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
@@ -156,6 +228,13 @@ class Category extends BaseActiveRecord implements CategoryInterface
         return $item_class::get_by( ['catalog_category_id' => $this->get_id() ] );
     }
 
+    /**
+     * @return CategoryInterface[]
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \ReflectionException
+     */
     public function get_categories(): iterable
     {
         return static::get_by( ['parent_catalog_category_id' => $this->get_id() ] );

@@ -250,16 +250,16 @@
             delete_category(catalog_category_uuid, catalog_category_name) {
                 this.DeleteElement.modal_title = 'Delete category ' + catalog_category_name;
                 this.DeleteElement.name = catalog_category_name;
-                //this.DeleteElement.url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Category:crud_action_delete', catalog_category_uuid);
-                this.DeleteElement.url = '/catalog/category/' + catalog_category_uuid
+                this.DeleteElement.url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Category:crud_action_delete', catalog_category_uuid);
+                //this.DeleteElement.url = '/catalog/category/' + catalog_category_uuid
                 this.DeleteElement.type = 'Category';
                 this.$bvModal.show('delete-element-modal');
             },
             delete_item(catalog_item_uuid, catalog_item_name) {
                 this.DeleteElement.modal_title = 'Delete item ' + catalog_item_name;
                 this.DeleteElement.name = catalog_item_name;
-                //this.DeleteElement.url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Item:crud_action_delete', catalog_item_uuid);
-                this.DeleteElement.url = '/catalog/item/' + catalog_item_uuid
+                this.DeleteElement.url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Item:crud_action_delete', catalog_item_uuid);
+                //this.DeleteElement.url = '/catalog/item/' + catalog_item_uuid
                 this.DeleteElement.type = 'Item';
                 this.$bvModal.show('delete-element-modal');
             },

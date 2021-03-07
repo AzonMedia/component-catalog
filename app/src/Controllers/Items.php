@@ -17,6 +17,10 @@ use GuzabaPlatform\Catalog\Models\Item;
 use GuzabaPlatform\Platform\Application\BaseController;
 use Psr\Http\Message\ResponseInterface;
 
+/**
+ * Class Items
+ * @package GuzabaPlatform\Catalog\Controllers
+ */
 class Items extends BaseController
 {
     protected const CONFIG_DEFAULTS = [
@@ -48,6 +52,14 @@ class Items extends BaseController
 
     protected const CONFIG_RUNTIME = [];
 
+    /**
+     * @param string|null $catalog_category_uuid
+     * @return ResponseInterface
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \ReflectionException
+     */
     public function main(?string $catalog_category_uuid = null): ResponseInterface
     {
         $categories_class = self::CONFIG_RUNTIME['class_dependencies'][CategoriesInterface::class];
@@ -74,6 +86,14 @@ class Items extends BaseController
         return self::get_structured_ok_response($struct);
     }
 
+    /**
+     * @param string|null $catalog_category_uuid
+     * @return ResponseInterface
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \ReflectionException
+     */
     public function items(?string $catalog_category_uuid = NULL): ResponseInterface
     {
         $items_class = self::CONFIG_RUNTIME['class_dependencies'][ItemsInterface::class];
@@ -86,6 +106,14 @@ class Items extends BaseController
         return self::get_structured_ok_response($struct);
     }
 
+    /**
+     * @param string|null $catalog_category_uuid
+     * @return ResponseInterface
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Base\Exceptions\RunTimeException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \ReflectionException
+     */
     public function categories(?string $catalog_category_uuid = NULL): ResponseInterface
     {
         $categories_class = self::CONFIG_RUNTIME['class_dependencies'][CategoriesInterface::class];

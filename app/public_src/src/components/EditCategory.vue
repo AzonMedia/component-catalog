@@ -37,11 +37,11 @@
         },
         methods: {
             modal_ok_handler(bvModalEvent) {
-                //let url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Category:crud_action_create')//if this class is inherited then in routes_map.config.js the child will show up
-                let url = '/catalog/category'
+                let url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Category:crud_action_create')//if this class is inherited then in routes_map.config.js the child will show up
+                //let url = '/catalog/category'
                 if (this.CategoryData.catalog_category_uuid) {
-                    //url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Category:crud_action_update', this.CategoryData.catalog_category_uuid)
-                    url = '/catalog/category/' + this.CategoryData.catalog_category_uuid
+                    url = this.get_route('GuzabaPlatform\\Catalog\\Models\\Category:crud_action_update', this.CategoryData.catalog_category_uuid)
+                    //url = '/catalog/category/' + this.CategoryData.catalog_category_uuid
                 }
                 let SendValues = {};
                 SendValues.catalog_category_name = this.catalog_category_name;

@@ -5,6 +5,8 @@ namespace GuzabaPlatform\Catalog\Models;
 
 use Azonmedia\Utilities\GeneralUtil;
 use Guzaba2\Authorization\Exceptions\PermissionDeniedException;
+use Guzaba2\Base\Exceptions\RunTimeException;
+use Guzaba2\Kernel\Kernel;
 use Guzaba2\Orm\Exceptions\RecordNotFoundException;
 use Guzaba2\Orm\Exceptions\ValidationFailedException;
 use Guzaba2\Orm\Interfaces\ValidationFailedExceptionInterface;
@@ -18,6 +20,7 @@ use GuzabaPlatform\Images\Interfaces\ImageInterface;
 use GuzabaPlatform\Platform\Application\BaseActiveRecord;
 use GuzabaPlatform\Tags\Base\Interfaces\TagInterface;
 use GuzabaPlatform\Catalog\Base\Interfaces\ItemInterface;
+use Psr\Log\LogLevel;
 
 /**
  * Class Item
@@ -42,6 +45,8 @@ class Item extends BaseActiveRecord implements ItemInterface
         'object_name_property'  => 'catalog_item_name',//required by BaseActiveRecord::get_object_name_property()
 
         'images_dir'            => 'products',//relative to the File::CONFIG_RUNTIME['store_relative_base']
+
+        'automate_slug'         => true,//should a slug (alias) be generated automatically if it is empty
 
         //'category_class'        => Category::class,
         //'image_class'           => Image::class,
@@ -77,6 +82,18 @@ class Item extends BaseActiveRecord implements ItemInterface
      */
     public ?string $catalog_category_uuid = NULL;
 
+    /**
+     * Prevents setting the images property. It is readonly.
+     * @param array $images
+     * @return array
+     * @throws RunTimeException
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     */
+    protected function _before_set_images(array $images): array
+    {
+        throw new RunTimeException(sprintf(t::_('It is not supported to set the images property on %1$s.'), get_class($this) ));
+    }
+
     protected function _after_read(): void
     {
         $category_class = static::CONFIG_RUNTIME['class_dependencies'][CategoryInterface::class];
@@ -95,7 +112,13 @@ class Item extends BaseActiveRecord implements ItemInterface
             //or both - as associative array
             $realpath = realpath($Image->image_path);
             //$this->images[$realpath] = str_replace($public_dir, '', $realpath);
-            $this->images[] = str_replace($public_dir, '', $realpath);
+            if ($realpath === false) {
+                $message = sprintf(t::_('realpath() returned false for image %1$s. This can happen when the content has been moved to another directory.'), $Image->image_path);
+                Kernel::log($message, LogLevel::WARNING);
+            } else {
+                $this->images[] = str_replace($public_dir, '', $realpath);
+            }
+
         }
 
         if ($this->catalog_item_slug === null && !$this->is_property_modified('catalog_item_slug')) {
@@ -105,6 +128,7 @@ class Item extends BaseActiveRecord implements ItemInterface
 
     protected function _before_write(): void
     {
+
         if (!$this->catalog_category_id) {
             if ($this->catalog_category_uuid) {
                 if (GeneralUtil::is_uuid($this->catalog_category_uuid)) {
@@ -129,6 +153,13 @@ class Item extends BaseActiveRecord implements ItemInterface
 
     protected function _after_write(): void
     {
+
+        if (self::CONFIG_RUNTIME['automate_slug']) {
+            if ($this->catalog_item_slug === null) {
+                $this->catalog_item_slug = self::convert_to_slug($this->catalog_item_name);
+            }
+        }
+
         if ($this->is_property_modified('catalog_item_slug')) {
             $original_slug = $this->get_property_original_value('catalog_item_slug');
             if ($original_slug) {
@@ -172,6 +203,10 @@ class Item extends BaseActiveRecord implements ItemInterface
         return $Item;
     }
 
+    /**
+     * Returns the images_dir from the class configuration
+     * @return string
+     */
     public static function get_images_dir(): string
     {
         return self::CONFIG_RUNTIME['images_dir'];
