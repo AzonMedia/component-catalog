@@ -163,7 +163,8 @@ class Category extends BaseActiveRecord implements CategoryInterface
         $path = [];
         $Category = $this;
         do {
-            $path[$Category->get_uuid()] = $Category->catalog_category_name;
+            //$path[$Category->get_uuid()] = $Category->catalog_category_name;
+            $path[$Category->get_slug()] = $Category->catalog_category_name;
             $Category = $Category->get_parent_category();
         } while ($Category);
         $path = array_reverse($path);
