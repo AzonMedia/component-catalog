@@ -21,6 +21,7 @@
     >
         <p>Item name: <span v-for="(catalog_category_name, catalog_category_uuid) in $parent.CategoryPath">/{{catalog_category_name}}</span>/ <input v-model="catalog_item_name" type="text" placeholder="item name" /></p>
         <p>Item slug: <input v-model="catalog_item_slug" type="text" placeholder="catalog-item-slug"></p>
+        <p><b-form-checkbox v-model="catalog_item_hidden" value="1" unchecked-value="0" switch>Hide item</b-form-checkbox></p>
         <p>Item description:
 
             <quill-editor
@@ -32,6 +33,7 @@
                     @ready="on_editor_ready($event)"
             />
         </p>
+
     </b-modal>
 
 </template>
@@ -59,6 +61,7 @@
                 catalog_item_description: '',
                 catalog_category_uuid: '',
                 catalog_item_uuid: '',
+                catalog_item_hidden: '',
                 EditorOption: {
 
                 },
@@ -78,13 +81,14 @@
                     url = '/catalog/item/' + this.catalog_item_uuid
                 }
                 let SendValues = {};
-                SendValues.catalog_item_name = this.catalog_item_name;
+                SendValues.catalog_item_name = this.catalog_item_name
                 if (!this.catalog_category_uuid) {
-                    this.catalog_category_uuid = this.$parent.catalog_category_uuid;
+                    this.catalog_category_uuid = this.$parent.catalog_category_uuid
                 }
-                SendValues.catalog_category_uuid = this.catalog_category_uuid;
+                SendValues.catalog_category_uuid = this.catalog_category_uuid
                 SendValues.catalog_item_description = this.catalog_item_description
                 SendValues.catalog_item_slug = this.catalog_item_slug
+                SendValues.catalog_item_hidden = this.catalog_item_hidden
                 let method = this.catalog_item_uuid ? 'put' : 'post';
                 this.$http(
                     {
