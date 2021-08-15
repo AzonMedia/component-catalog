@@ -82,47 +82,69 @@ class Item extends BaseActiveRecord implements ItemInterface
      */
     public ?string $catalog_category_uuid = NULL;
 
-    /**
-     * Prevents setting the images property. It is readonly.
-     * @param array $images
-     * @return array
-     * @throws RunTimeException
-     * @throws \Azonmedia\Exceptions\InvalidArgumentException
-     */
-    protected function _before_set_images(array $images): array
-    {
-        throw new RunTimeException(sprintf(t::_('It is not supported to set the images property on %1$s.'), get_class($this) ));
-    }
+//    /**
+//     * Prevents setting the images property. It is readonly.
+//     * @param array $images
+//     * @return array
+//     * @throws RunTimeException
+//     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+//     */
+//    protected function _before_set_images(array $images): array
+//    {
+//        throw new RunTimeException(sprintf(t::_('It is not supported to set the images property on %1$s.'), get_class($this) ));
+//    }
 
     protected function _after_read(): void
     {
+
+
         $category_class = static::CONFIG_RUNTIME['class_dependencies'][CategoryInterface::class];
         if ($this->catalog_category_id && !$this->is_property_modified('catalog_category_uuid') ) {
             $Category = new $category_class($this->catalog_category_id);
             $this->catalog_category_uuid = $Category->get_uuid();
         }
 
-        $GuzabaPlatform = self::get_service('GuzabaPlatform');
-        $public_dir = $GuzabaPlatform->get_public_dir();
-        $images = $this->get_images();
-        $images_paths = [];
-        foreach ($images as $Image) {
-            //$this->images[] = realpath($Image->image_path);
-            //better store the public asset path (accessible through browser), not the absolute image path
-            //or both - as associative array
-            $realpath = realpath($Image->image_path);
-            //$this->images[$realpath] = str_replace($public_dir, '', $realpath);
-            if ($realpath === false) {
-                $message = sprintf(t::_('realpath() returned false for image %1$s. This can happen when the content has been moved to another directory.'), $Image->image_path);
-                Kernel::log($message, LogLevel::WARNING);
-            } else {
-                $this->images[] = str_replace($public_dir, '', $realpath);
-            }
+        if (!$this->images) {
+            $GuzabaPlatform = self::get_service('GuzabaPlatform');
+            $public_dir = $GuzabaPlatform->get_public_dir();
+            $images = $this->get_images();
+            $images_paths = [];
+            foreach ($images as $Image) {
+                //$this->images[] = realpath($Image->image_path);
+                //better store the public asset path (accessible through browser), not the absolute image path
+                //or both - as associative array
+                $realpath = realpath($Image->image_path);
+                //$this->images[$realpath] = str_replace($public_dir, '', $realpath);
+                if ($realpath === false) {
+                    $message = sprintf(t::_('realpath() returned false for image %1$s. This can happen when the content has been moved to another directory.'), $Image->image_path);
+                    Kernel::log($message, LogLevel::WARNING);
+                } else {
+                    $this->images[] = str_replace($public_dir, '', $realpath);
+                }
 
+            }
         }
 
         if ($this->catalog_item_slug === null && !$this->is_property_modified('catalog_item_slug')) {
             $this->catalog_item_slug = $this->get_alias();
+        }
+    }
+
+    /**
+     * Sets the images to this object by using the provided array of absolute paths
+     * @param string[] $images Array with absolute path to images
+     * @throws RunTimeException
+     * @throws \Azonmedia\Exceptions\InvalidArgumentException
+     * @throws \Guzaba2\Coroutine\Exceptions\ContextDestroyedException
+     * @throws \ReflectionException
+     */
+    public function set_images(array $images): void
+    {
+        $GuzabaPlatform = self::get_service('GuzabaPlatform');
+        $public_dir = $GuzabaPlatform->get_public_dir();
+        foreach ($images as $image) {
+            $realpath = realpath($image);
+            $this->images[] = str_replace($public_dir, '', $realpath);
         }
     }
 
