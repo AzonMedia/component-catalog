@@ -214,7 +214,7 @@ class Item extends BaseActiveRecord implements ItemInterface
      * @throws \Guzaba2\Kernel\Exceptions\ConfigurationException
      * @throws \ReflectionException
      */
-    public static function create(int $catalog_category_id, string $catalog_item_name, string $catalog_item_description, float $catalog_item_price): self
+    public static function create(int $catalog_category_id, string $catalog_item_name, string $catalog_item_description, float $catalog_item_price): static
     {
         $Item = new static();
         $Item->catalog_category_id = $catalog_category_id;
