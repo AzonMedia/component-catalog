@@ -196,7 +196,6 @@
                 }
             },
             open_item(catalog_item_uuid) {
-
                 if (typeof this.EmbeddedData !== 'undefined' && typeof this.EmbeddedData.open_item === 'function') {
                     return this.EmbeddedData.open_item(this, catalog_item_uuid)
                 } else {
@@ -204,20 +203,29 @@
                     return this.edit_item(catalog_item_uuid)
                 }
             },
-
-            edit_category(catalog_category_uuid, catalog_category_name) {
-                this.CategoryData.modal_title = 'Edit category ' + catalog_category_name;
+            /**
+             *
+             * @param {string} catalog_category_uuid
+             */
+            edit_category(catalog_category_uuid) {
+                //this.CategoryData.modal_title = 'Edit category ' + catalog_category_name;
+                this.CategoryData.modal_title = 'Edit category';
                 this.CategoryData.button_title = 'Save';
                 this.CategoryData.catalog_category_uuid = catalog_category_uuid;
-                this.CategoryData.catalog_category_name = catalog_category_name;
+                //this.CategoryData.catalog_category_name = catalog_category_name;
                 this.CategoryData.method = 'put';
                 this.$bvModal.show('category-modal');
             },
-            edit_item(catalog_item_uuid, catalog_item_name) {
-                this.ItemData.modal_title = 'Edit item ' + catalog_item_name;
+            /**
+             *
+             * @param {string} catalog_item_uuid
+             */
+            edit_item(catalog_item_uuid) {
+                //this.ItemData.modal_title = 'Edit item ' + catalog_item_name;
+                this.ItemData.modal_title = 'Edit item';
                 this.ItemData.button_title = 'Save';
                 this.ItemData.catalog_item_uuid = catalog_item_uuid;
-                this.ItemData.catalog_item_name = catalog_item_name;
+                //this.ItemData.catalog_item_name = catalog_item_name;
                 this.ItemData.method = 'put';
                 this.$bvModal.show('item-modal');
             },

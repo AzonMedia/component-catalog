@@ -19,6 +19,8 @@
             @show="modal_show_handler"
             size="lg"
     >
+        <p>Item ID: {{catalog_item_id}}</p>
+        <p>Item UUID: {{catalog_item_uuid}}</p>
         <p>Item name: <span v-for="(catalog_category_name, catalog_category_uuid) in $parent.CategoryPath">/{{catalog_category_name}}</span>/ <input v-model="catalog_item_name" type="text" placeholder="item name" /></p>
         <p>Item slug: <input v-model="catalog_item_slug" type="text" placeholder="catalog-item-slug"></p>
         <p><b-form-checkbox v-model="catalog_item_hidden" value="1" unchecked-value="0" switch>Hide item</b-form-checkbox></p>
@@ -60,6 +62,7 @@
                 catalog_item_slug: '',
                 catalog_item_description: '',
                 catalog_category_uuid: '',
+                catalog_item_id: '',
                 catalog_item_uuid: '',
                 catalog_item_hidden: '',
                 EditorOption: {
@@ -116,7 +119,7 @@
                 if (this.ItemData.catalog_item_uuid) {
                     this.$http.get(this.get_route('GuzabaPlatform\\Catalog\\Models\\Item:crud_action_read', this.ItemData.catalog_item_uuid))
                         .then(resp => {
-                            console.log(resp)
+                            this.catalog_item_id            = resp.data.catalog_item_id;
                             this.catalog_item_name          = resp.data.catalog_item_name;
                             this.catalog_item_slug          = resp.data.catalog_item_slug;
                             this.catalog_item_description   = resp.data.catalog_item_description;
